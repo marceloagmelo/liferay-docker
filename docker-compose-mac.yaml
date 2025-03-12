@@ -1,0 +1,101 @@
+version: '3.9'
+
+services:
+
+  database:
+    image: mysql:8.0.25
+    container_name: mysql
+    platform: linux/amd64
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=lportal
+    command: --character-set-server=utf8 --collation-server=utf8_general_ci --character-set-filesystem=utf8 --lower-case-table-names=0 --max_allowed_packet=100M
+    volumes:
+      - ./dump:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
+
+  adminer:
+    image: adminer:5.0.2
+    container_name: adminer
+    ports:
+      - "9090:8080"
+
+  liferay:
+    image: marceloagmelo/liferay/portal:7.4.3.132-ga132
+    container_name: liferay
+    build:
+      dockerfile: ./docker-compose/liferay/Dockerfile
+      context: ./
+    environment:
+      - LIFERAY_JPDA_ENABLED=true
+      - LIFERAY_JVM_OPTS=-server -Xms8g -Xmx24g -Delasticsearch.protocol=http -Delasticsearch.host=search -Delasticsearch.port=9200 -Delasticsearch.operation.mode=REMOTE -Delasticsearch.cluster.name=LiferayElasticsearchCluster -Delasticsearch.production.enabled=false -Dtomcat.maxThreads=300 -Dtomcat.minSpareThreads=50 -Dtomcat.maxConnections=16384 -Duser.timezone=GMT-3
+      - LIFERAY_JDBC_PERIOD_DEFAULT_PERIOD_DRIVER_UPPERCASEC_LASS_UPPERCASEN_AME=com.mysql.cj.jdbc.Driver
+      - LIFERAY_JDBC_PERIOD_DEFAULT_PERIOD_URL=jdbc:mysql://database/lportal?characterEncoding=UTF-8&dontTrackOpenResources=true&holdResultsOpenOverStatementClose=true&serverTimezone=GMT&useFastDateParsing=false&useUnicode=true
+      - LIFERAY_JDBC_PERIOD_DEFAULT_PERIOD_USERNAME=root
+      - LIFERAY_JDBC_PERIOD_DEFAULT_PERIOD_PASSWORD=root
+      - LIFERAY_MODULE_PERIOD_FRAMEWORK_PERIOD_PROPERTIES_PERIOD_OSGI_PERIOD_CONSOLE=0.0.0.0:11311
+      - LIFERAY_DATABASE_PERIOD_INDEXES_PERIOD_UPDATE_PERIOD_ON_PERIOD_STARTUP=true
+      - LIFERAY_UPGRADE_PERIOD_DATABASE_PERIOD_AUTO_PERIOD_RUN=true
+      - LIFERAY_SESSION_PERIOD_TIMEOUT=120
+      - LIFERAY_RETRY_PERIOD_JDBC_PERIOD_ON_PERIOD_STARTUP_PERIOD_DELAY=20
+      - LIFERAY_RETRY_PERIOD_JDBC_PERIOD_ON_PERIOD_STARTUP_PERIOD_MAX_PERIOD_RETRIES=5
+      - LIFERAY_SETUP_PERIOD_WIZARD_PERIOD_ENABLED=false
+      - LIFERAY_TERMS_PERIOD_OF_PERIOD_USE_PERIOD_REQUIRED=false
+      - LIFERAY_COMPANY_PERIOD_DEFAULT_PERIOD_NAME=liferay
+      - LIFERAY_COMPANY_PERIOD_DEFAULT_PERIOD_WEB_PERIOD_ID=liferay.com
+      - LIFERAY_COMPANY_PERIOD_DEFAULT_PERIOD_LOCALE=pt_BR
+      - LIFERAY_COMPANY_PERIOD_DEFAULT_PERIOD_TIME_PERIOD_ZONE=GMT-3
+      - LIFERAY_BLOGS_PERIOD_PINGBACK_PERIOD_ENABLED=false
+      - LIFERAY_BLOGS_PERIOD_PING_PERIOD_GOOGLE_PERIOD_ENABLED=false
+      - LIFERAY_COM_PERIOD_LIFERAY_PERIOD_PORTAL_PERIOD_SERVLET_PERIOD_FILTERS_PERIOD_SSO_PERIOD_CAS_PERIOD__UPPERCASEC__UPPERCASEA__UPPERCASES__UPPERCASEF_ILTER=false
+      - LIFERAY_COM_PERIOD_LIFERAY_PERIOD_PORTAL_PERIOD_SERVLET_PERIOD_FILTERS_PERIOD_SSO_PERIOD_NTLM_PERIOD__UPPERCASEN_TLM_UPPERCASEF_ILTER=false
+      - LIFERAY_COM_PERIOD_LIFERAY_PERIOD_PORTAL_PERIOD_SERVLET_PERIOD_FILTERS_PERIOD_SSO_PERIOD_NTLM_PERIOD__UPPERCASEN_TLM_UPPERCASEP_OST_UPPERCASEF_ILTER=false
+      - LIFERAY_COM_PERIOD_LIFERAY_PERIOD_PORTAL_PERIOD_SERVLET_PERIOD_FILTERS_PERIOD_SSO_PERIOD_OPENSSO_PERIOD__UPPERCASEO_PEN_UPPERCASES__UPPERCASES__UPPERCASEO__UPPERCASEF_ILTER=false
+      - LIFERAY_COM_PERIOD_LIFERAY_PERIOD_PORTAL_PERIOD_SHAREPOINT_PERIOD__UPPERCASES_HAREPOINT_UPPERCASEF_ILTER=false
+      - LIFERAY_LOCALES=en_US,pt_BR
+      - LIFERAY_LOCALES_PERIOD_ENABLED=en_US,pt_BR
+      - LIFERAY_SESSION_PERIOD_TRACKER_PERIOD_MEMORY_PERIOD_ENABLED=false
+      - LIFERAY_HIBERNATE_PERIOD_JDBC_PERIOD_BATCH_UNDERLINE_SIZE=200
+      - LIFERAY_BUFFERED_PERIOD_INCREMENT_PERIOD_STANDBY_PERIOD_QUEUE_PERIOD_THRESHOLD=10000
+      - LIFERAY_BUFFERED_PERIOD_INCREMENT_PERIOD_STANDBY_PERIOD_TIME_PERIOD_UPPER_PERIOD_LIMIT=60
+      - LIFERAY_COUNTER_PERIOD_INCREMENT=5000
+      - LIFERAY_CLUSTER_PERIOD_LINK_PERIOD_ENABLED=false
+      - LIFERAY_WEB_PERIOD_SERVER_PERIOD_DISPLAY_PERIOD_NODE=true
+      - LIFERAY_REDIRECT_PERIOD_URL_PERIOD_SECURITY_PERIOD_MODE=domain
+      - LIFERAY_JSONWS_PERIOD_WEB_PERIOD_SERVICE_PERIOD_API_PERIOD_DISCOVERABLE=false
+      - LIFERAY_MODULE_PERIOD_FRAMEWORK_PERIOD_PROPERTIES_PERIOD_ORG_PERIOD_APACHE_PERIOD_FELIX_PERIOD_CONFIGADMIN_PERIOD_PLUGIN_PERIOD_INTERPOLATION_PERIOD_FILE_PERIOD_ENCODING=UTF-8
+    ports:
+      - "8080:8080"
+      - "11311:11311"
+      - "8000:8000"
+    volumes:
+      - ./bundles/deploy:/mnt/liferay/deploy
+      - ./bundles/osgi/modules:/opt/liferay/osgi/modules
+      - ./bundles/osgi/war:/opt/liferay/osgi/war
+      - ./bundles/logs:/opt/liferay/logs
+      - ./bundles/data/document_library:/opt/liferay/data/document_library
+    depends_on:
+      - database
+      - search
+
+  search:
+    image: marceloagmelo/elasticsearch:7.17.10
+    container_name: search
+    build: ./docker-compose/elasticsearch/
+    environment:
+      - cluster.name=LiferayElasticsearchCluster
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.type=single-node"
+      - "node.name=es-node1"
+    volumes:
+      - ./bundles/data/elasticsearch-data:/usr/share/elasticsearch/data
+
+  nginx:
+    image: marceloagmelo/nginx:1.16.1
+    container_name: nginx
+    build: ./docker-compose/nginx/
+    ports:
+      - "80:80"
+    depends_on:
+      - liferay

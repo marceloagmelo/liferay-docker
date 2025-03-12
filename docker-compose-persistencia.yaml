@@ -1,0 +1,67 @@
+version: '3.8'
+
+volumes:
+  lfr-database-uat:
+
+services:
+
+  database:
+    image: mysql:8.0.25
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=lportal
+    command: --character-set-server=utf8 --collation-server=utf8_general_ci --character-set-filesystem=utf8 --lower-case-table-names=0 --max_allowed_packet=100M
+    volumes:
+      - lfr-database-uat:/var/lib/mysql
+      - ./dump:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
+
+  liferay:
+    image: honda/liferay
+    build:
+      dockerfile: ./docker-compose/liferay/Dockerfile
+      context: ./
+    environment:
+      - LIFERAY_JPDA_ENABLED=true
+      - LIFERAY_JVM_OPTS=-Xms3g -Xmx3g -Duser.timezone=GMT-3
+      - LIFERAY_MODULE_PERIOD_FRAMEWORK_PERIOD_PROPERTIES_PERIOD_OSGI_PERIOD_CONSOLE=0.0.0.0:11311
+      - LIFERAY_RETRY_PERIOD_JDBC_PERIOD_ON_PERIOD_STARTUP_PERIOD_DELAY=180
+      - LIFERAY_RETRY_PERIOD_JDBC_PERIOD_ON_PERIOD_STARTUP_PERIOD_MAX_PERIOD_RETRIES=20
+      - LIFERAY_DATABASE_PERIOD_INDEXES_PERIOD_UPDATE_PERIOD_ON_PERIOD_STARTUP=true
+      - LIFERAY_UPGRADE_PERIOD_DATABASE_PERIOD_AUTO_PERIOD_RUN=true
+      - LIFERAY_DISABLE_TRIAL_LICENSE=true
+      - LIFERAY_SESSION_PERIOD_TIMEOUT=120
+      - LIFERAY_COMPANY_PERIOD_DEFAULT_PERIOD_TIME_PERIOD_ZONE=GMT-3
+    ports:
+      - "8080:8080"
+      - "11311:11311"
+      - "8000:8000"
+    volumes:
+      - ./bundles/deploy:/mnt/liferay/deploy
+      - ./bundles/osgi/modules:/opt/liferay/osgi/modules
+      - ./bundles/osgi/war:/opt/liferay/osgi/war
+      - ./bundles/logs:/opt/liferay/logs
+      - ./bundles/data/document_library:/opt/liferay/data/document_library
+    depends_on:
+      - database
+      - search
+
+  search:
+    image: honda/elasticsearch
+    build: ./docker-compose/elasticsearch/
+    environment:
+      - cluster.name=liferay_cluster
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.type=single-node"
+      - "node.name=es-node1"
+    volumes:
+      - ./bundles/data/elasticsearch-data:/usr/share/elasticsearch/data
+
+  nginx:
+    image: honda/nginx
+    build: ./docker-compose/nginx/
+    ports:
+      - "80:80"
+    depends_on:
+      - liferay
