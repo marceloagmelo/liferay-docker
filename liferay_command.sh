@@ -51,6 +51,9 @@ up_docker_app() {
 
 build_project() {
   log_info "=> TASK: build_project"
+  if [ ! -d $LIFERAY_HOME/modules ]; then
+    log_debug mkdir -p $LIFERAY_HOME/modules
+  fi
   if [[ ! -z $(find $LIFERAY_HOME/modules -type d -empty) ]]; then
     cd $LIFERAY_HOME/modules
     log_debug blade gw deploy
@@ -61,7 +64,9 @@ build_project() {
 
 build_theme() {
   log_info "=> TASK: build_theme"
-
+  if [ ! -d $LIFERAY_HOME/modules ]; then
+    log_debug mkdir -p $LIFERAY_HOME/themes
+  fi
   if [[ ! -z $(find $LIFERAY_HOME/themes -type d -empty) ]]; then
     cd $LIFERAY_HOME/themes
     log_debug blade gw deploy
