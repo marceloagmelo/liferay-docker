@@ -31,4 +31,4 @@ test-results
 .yarnrc
 node_modules_cache/
 yarn.lock
-
+modules/*/src/__tests__/components/__snapshots__/*.snap
