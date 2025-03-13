@@ -7,6 +7,7 @@ Esse projeto contempla um ambiente do liferay rodando em container docker.
 
 1.  Instalar o docker
 2.  Instalar o docker-compose
+3.  Instalar o blade
 
 ## Execução
 
